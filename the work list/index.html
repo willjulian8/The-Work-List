@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Work List</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#5b8cff" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>The Work List</h1>
+        <p class="tagline">Your personal HQ</p>
+      </div>
+
+      <div class="controls">
+        <input id="searchInput" type="search" placeholder="Search tasks, tags, priorities... ( / )" aria-label="Search tasks" />
+        <button id="newTaskBtn" class="btn">+ New Task (N)</button>
+
+        <div class="menu">
+          <button id="themeBtn" class="icon-btn" title="Toggle theme">🎨</button>
+        </div>
+
+        <div class="data-controls">
+          <button id="exportBtn" class="btn small">Export (Ctrl+E)</button>
+          <input id="importFile" class="file-input" type="file" accept="application/json" title="Import tasks JSON" />
+        </div>
+
+        <div class="pwa-controls">
+          <button id="installBtn" class="btn small ghost hidden">Install App</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="sidebar">
+        <div class="profile-card">
+          <div class="profile-pulse"></div>
+          <div class="profile-name">Your Tasks</div>
+          <div class="profile-sub">Personalize with themes & layouts</div>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-head">
+            <h3>Progress</h3>
+            <span class="muted small">Today</span>
+          </div>
+          <div class="progress-percent" id="progressPercent">0%</div>
+          <div class="progress-bar">
+            <div id="progressFill"></div>
+          </div>
+          <div class="progress-stats">
+            <div>
+              <strong id="completedCount">0</strong>
+              <span>Done</span>
+            </div>
+            <div>
+              <strong id="activeCount">0</strong>
+              <span>Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="classes-card">
+          <div class="classes-head">
+            <h3>Classes</h3>
+            <span class="muted small">Tap to focus</span>
+          </div>
+          <div id="classList" class="class-list" aria-label="Class filters"></div>
+          <div class="class-form">
+            <input id="classNameInput" type="text" placeholder="Add a class (e.g., Biology)" aria-label="New class name" />
+            <button id="classAddBtn" type="button" class="btn small">Add</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <h3>Filters</h3>
+          <select id="filterSelect" aria-label="Filter tasks">
+            <option value="all">All tasks</option>
+            <option value="active">Active</option>
+            <option value="done">Completed</option>
+            <option value="overdue">Overdue</option>
+            <option value="today">Due today</option>
+          </select>
+
+          <h4>Priority</h4>
+          <div class="priority-filters">
+            <button data-priority="all" class="chip selected">All</button>
+            <button data-priority="low" class="chip">Low</button>
+            <button data-priority="medium" class="chip">Medium</button>
+            <button data-priority="high" class="chip">High</button>
+          </div>
+
+          <h4>Tags</h4>
+          <div id="tagList" class="tag-list"></div>
+
+          <div class="sidebar-actions">
+            <button id="completeAll" class="btn small">Mark all done</button>
+            <button id="clearDone" class="btn small ghost">Clear completed</button>
+          </div>
+        </div>
+
+        <div class="theme-presets">
+          <h3>Themes</h3>
+          <div class="presets">
+            <button class="preset" data-theme="default">Default</button>
+            <button class="preset" data-theme="sunset">Sunset</button>
+            <button class="preset" data-theme="midnight">Midnight</button>
+          </div>
+        </div>
+
+        <div class="notes-card">
+          <h3>Scratchpad</h3>
+          <textarea id="notesArea" rows="4" placeholder="Jot down ideas, grocery items, reminders..."></textarea>
+          <div class="notes-footer">
+            <span class="muted small">Auto-saves</span>
+            <button id="notesClear" class="btn small ghost" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div class="help">
+          <h4>Shortcuts</h4>
+          <ul>
+            <li><strong>N</strong>: New task</li>
+            <li><strong>/</strong>: Focus search</li>
+            <li><strong>Ctrl/Cmd + E</strong>: Export JSON</li>
+            <li><strong>?</strong>: Toggle this help</li>
+          </ul>
+        </div>
+      </aside>
+
+      <section class="board">
+        <div class="board-header">
+          <h2 id="boardTitle">Tasks</h2>
+          <div class="board-meta">
+            <span id="remainingCount">0</span> remaining •
+            <span id="totalCount">0</span> total
+          </div>
+        </div>
+
+        <div class="calendar-panel" aria-label="Calendar view">
+          <div class="calendar-head">
+            <div class="calendar-month">
+              <button id="prevMonthBtn" class="icon-btn circle" aria-label="Previous month">◀</button>
+              <div class="calendar-text">
+                <div id="calendarMonthLabel">Month</div>
+                <small id="calendarDayLabel">Showing all tasks</small>
+              </div>
+              <button id="nextMonthBtn" class="icon-btn circle" aria-label="Next month">▶</button>
+            </div>
+            <div class="calendar-actions">
+              <input id="calendarPicker" type="date" class="calendar-date-field" aria-label="Jump to date" />
+              <button id="calendarTodayBtn" class="btn small">Today</button>
+              <button id="calendarAllBtn" class="btn small ghost">All Tasks</button>
+            </div>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+          </div>
+          <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="Monthly calendar"></div>
+        </div>
+
+        <ul id="taskList" class="task-list" aria-live="polite"></ul>
+
+        <div class="empty-state" id="emptyState">
+          <h3>No tasks yet</h3>
+          <p>Click “+ New Task” to add your first to-do.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Task modal -->
+    <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-card">
+        <header class="modal-head">
+          <h3 id="modalTitle">New Task</h3>
+          <button id="closeModal" class="icon-btn">✖</button>
+        </header>
+
+        <form id="taskForm" class="task-form">
+          <label>
+            Title
+            <input id="taskTitle" type="text" required placeholder="What do you want to do?" />
+          </label>
+
+          <label>
+            Description
+            <textarea id="taskDesc" rows="3" placeholder="Details (optional)"></textarea>
+          </label>
+
+          <div class="row">
+            <label class="due-field">
+              <span class="label-title">Due date</span>
+              <input id="taskDue" type="date" />
+              <div class="due-quick">
+                <button type="button" class="due-chip" data-due-option="today">Today</button>
+                <button type="button" class="due-chip" data-due-option="tomorrow">Tomorrow</button>
+                <button type="button" class="due-chip" data-due-option="nextweek">Next Week</button>
+                <button type="button" class="due-chip" data-due-option="pick">Pick date</button>
+                <button type="button" class="due-chip" data-due-option="clear">No date</button>
+              </div>
+            </label>
+
+            <label>
+              Priority
+              <select id="taskPriority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Tags (comma separated)
+            <input id="taskTags" type="text" placeholder="school, work, errands" />
+          </label>
+
+          <label>
+            Class
+            <select id="taskClass">
+              <option value="">No class</option>
+            </select>
+          </label>
+
+          <label>
+            Subtasks (one per line)
+            <textarea id="taskSubtasks" rows="3" placeholder="Buy milk\nCall Alex"></textarea>
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="btn">Save task</button>
+            <button id="deleteTaskBtn" type="button" class="btn ghost hidden">Delete</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- small toast area -->
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <footer class="footer">
+      <div>Made by Will Julian</div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
